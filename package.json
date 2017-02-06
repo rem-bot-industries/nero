@@ -1,0 +1,22 @@
+{
+  "name": "rem_master",
+  "version": "0.0.1",
+  "description": "The master server for Rem",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Wolke <wolke@ram.moe>",
+  "license": "MIT",
+  "dependencies": {
+    "body-parser": "^1.16.0",
+    "dotenv": "^4.0.0",
+    "eventemitter3": "^2.0.2",
+    "express": "^4.14.1",
+    "hot-shots": "^4.3.1",
+    "lodash": "^4.17.4",
+    "request": "^2.79.0",
+    "winston": "^2.3.1",
+    "ws": "^2.0.1"
+  }
+}
