@@ -68,11 +68,15 @@ class WsServer extends EventEmitter {
     }
     removeShard(shard) {
         let shardCount = Object.keys(this.shards).length;
-        delete this.shards[shard.id];
-        this.emit('shard_removed',{sid:Object.keys(this.shards).length-1});
-        console.log(`RESHARDING from ${shardCount} -> ${shardCount-1}`);
-        this.reassignShardIds();
-        this.sendReady(true);
+        try {
+            delete this.shards[shard.id];
+            this.emit('shard_removed', {sid: Object.keys(this.shards).length - 1});
+            console.log(`RESHARDING from ${shardCount} -> ${shardCount - 1}`);
+            this.reassignShardIds();
+            this.sendReady(true);
+        } catch(e) {
+            console.error(e);
+        }
     }
     reassignShardIds() {
         let id = 0;
