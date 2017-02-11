@@ -61,7 +61,7 @@ class WsServer extends EventEmitter {
                     id: shard.shardID,
                     removeTimeOut: removeShardTimeout = setTimeout(() => {
                         this.removeShard(this.shards[shard.id]);
-                    }, 20000)
+                    }, 60000)
                 };
             }
         });
@@ -146,7 +146,7 @@ class WsServer extends EventEmitter {
                 this.emit('shard_ready', {sid: shardId});
                 startShardTimeout = setTimeout(() => {
                     this.sendReady(reshard);
-                }, 5000);
+                }, 20000);
                 // ws.send(JSON.stringify({
                 //     op: OPCODE.ready,
                 //     d: {heartbeat: 15000, sid: shardId, shards: Object.keys(this.shards).length}
