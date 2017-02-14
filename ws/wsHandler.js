@@ -195,6 +195,7 @@ class WsServer extends EventEmitter {
                             }));
                         } catch (e) {
                             console.error(e);
+                            shard.ws.close();
                         }
                         this.shards[shard.id].interval = this.setupHearbeat(shard.heartbeat, 0);
                         this.shards[shard.id].ready = true;
