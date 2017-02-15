@@ -24,6 +24,7 @@ try {
     process.exit(1);
 }
 global.remConfig = config;
+winston.info(`Using statsdhost: ${remConfig.dogstatsd_host}`);
 let shards = {};
 let StatTrack = require('./statistics/botStatTrack');
 let WsHandler = require('./ws/wsHandler');

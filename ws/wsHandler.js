@@ -10,7 +10,7 @@ let _ = require('lodash');
 let tracking_enabled = remConfig.tracking_enabled;
 let StatsD = require('hot-shots');
 let dogstatsd = new StatsD({host:remConfig.dogstatsd_host});
-`rem_master_${remConfig.environment}`;
+let stat = `rem_master_${remConfig.environment}`;
 let removeShardTimeout;
 let startShardTimeout;
 class WsServer extends EventEmitter {
