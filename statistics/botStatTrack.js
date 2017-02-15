@@ -5,7 +5,8 @@
 let request = require('request');
 let EventEmitter = require('eventemitter3');
 let StatsD = require('hot-shots');
-let dogstatsd = new StatsD();
+process.env.dogstatd_host = process.env.dogstatd_host ? process.env.dogstatd_host : 'localhost';
+let dogstatsd = new StatsD({host:process.env.dogstatd_host});
 let stat = process.env.tracking_name;
 let tracking_enabled = process.env.tracking_enabled;
 let discord_bots_token = process.env.discord_bots_token;
