@@ -9,7 +9,7 @@ let OPCODE = require('../structures/constants').MESSAGE_TYPES;
 let _ = require('lodash');
 let tracking_enabled = remConfig.tracking_enabled;
 let StatsD = require('hot-shots');
-let dogstatsd = new StatsD({host:remConfig.dogstatd_host});
+let dogstatsd = new StatsD({host:remConfig.dogstatsd_host});
 `rem_master_${remConfig.environment}`;
 let removeShardTimeout;
 let startShardTimeout;

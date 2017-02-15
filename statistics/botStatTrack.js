@@ -5,7 +5,7 @@
 let request = require('request');
 let EventEmitter = require('eventemitter3');
 let StatsD = require('hot-shots');
-let dogstatsd = new StatsD({host:remConfig.dogstatd_host});
+let dogstatsd = new StatsD({host:remConfig.dogstatsd_host});
 let stat = `rem_master_${remConfig.environment}`;
 let tracking_enabled = remConfig.tracking_enabled;
 let discord_bots_token = remConfig.discord_bots_token;
