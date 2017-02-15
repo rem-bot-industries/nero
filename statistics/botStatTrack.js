@@ -5,15 +5,14 @@
 let request = require('request');
 let EventEmitter = require('eventemitter3');
 let StatsD = require('hot-shots');
-process.env.dogstatd_host = process.env.dogstatd_host ? process.env.dogstatd_host : 'localhost';
-let dogstatsd = new StatsD({host:process.env.dogstatd_host});
-let stat = process.env.tracking_name;
-let tracking_enabled = process.env.tracking_enabled;
-let discord_bots_token = process.env.discord_bots_token;
-let carbonitex_token = process.env.carbonitex_token;
-let bot_id = process.env.bot_id;
-let carbonitex_enabled = process.env.carbonitex_enabled;
-let discord_bots_enabled = process.env.discord_bots_enabled;
+let dogstatsd = new StatsD({host:remConfig.dogstatd_host});
+let stat = `rem_master_${remConfig.environment}`;
+let tracking_enabled = remConfig.tracking_enabled;
+let discord_bots_token = remConfig.discord_bots_token;
+let carbonitex_token = remConfig.carbonitex_token;
+let bot_id = remConfig.bot_id;
+let carbonitex_enabled = remConfig.carbonitex_enabled;
+let discord_bots_enabled = remConfig.discord_bots_enabled;
 /**
  * The stattrack engine
  * @extends EventEmitter

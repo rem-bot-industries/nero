@@ -3,15 +3,14 @@
  */
 let EventEmitter = require('eventemitter3');
 let uws = require('ws');
-let ws_port = process.env.ws_port;
-let ws_host = process.env.ws_host;
+let ws_port = remConfig.ws_port;
+let ws_host = remConfig.ws_host;
 let OPCODE = require('../structures/constants').MESSAGE_TYPES;
 let _ = require('lodash');
-let tracking_enabled = process.env.tracking_enabled;
+let tracking_enabled = remConfig.tracking_enabled;
 let StatsD = require('hot-shots');
-process.env.dogstatd_host = process.env.dogstatd_host ? process.env.dogstatd_host : 'localhost';
-let dogstatsd = new StatsD({host:process.env.dogstatd_host});
-let stat = process.env.tracking_name;
+let dogstatsd = new StatsD({host:remConfig.dogstatd_host});
+`rem_master_${remConfig.environment}`;
 let removeShardTimeout;
 let startShardTimeout;
 class WsServer extends EventEmitter {
@@ -117,7 +116,7 @@ class WsServer extends EventEmitter {
         }
         if (tracking_enabled) dogstatsd.increment(`${stat}.websocket`);
         // console.log(`Master: ${JSON.stringify(msg)}`);
-        if (msg.shardToken !== process.env.shard_token) {
+        if (msg.shardToken !== remConfig.shard_token) {
             try {
                 ws.send({op: OPCODE.unauthorized});
             } catch (e) {

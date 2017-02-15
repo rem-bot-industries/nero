@@ -1,11 +1,6 @@
 /**
  * Created by julia on 31.01.2017.
  */
-require('dotenv').config();
-//uwu
-let shards = {};
-let StatTrack = require('./statistics/botStatTrack');
-let WsHandler = require('./ws/wsHandler');
 const winston = require('winston');
 let _ = require("lodash");
 winston.remove(winston.transports.Console);
@@ -13,6 +8,25 @@ winston.add(winston.transports.Console, {
     'timestamp': true,
     'colorize': true
 });
+let config;
+try {
+    if (process.env.secret_name) {
+        config = require(`/run/secrets/${process.env.secret_name}`);
+        winston.info(`Using docker secrets!`);
+    } else {
+        config = require('./config/main.json');
+        winston.info(`Using local secrets!`);
+    }
+
+} catch (e) {
+    winston.error(e);
+    winston.error('Failed to require config!');
+    process.exit(1);
+}
+global.remConfig = config;
+let shards = {};
+let StatTrack = require('./statistics/botStatTrack');
+let WsHandler = require('./ws/wsHandler');
 let wsServer = new WsHandler();
 const tracker = new StatTrack(60);
 wsServer.on('shard_ready', (data) => {
@@ -84,4 +98,4 @@ tracker.on('fetch', () => {
     tracker.update(guilds, users);
 });
 winston.info('Master started! OwO');
-winston.info(`Listening on IP: ${process.env.ws_host} and PORT: ${process.env.ws_port}`);
+winston.info(`Listening on IP: ${remConfig.ws_host} and PORT: ${remConfig.ws_port}`);
