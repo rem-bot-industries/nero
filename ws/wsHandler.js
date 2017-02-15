@@ -10,7 +10,7 @@ let _ = require('lodash');
 let tracking_enabled = process.env.tracking_enabled;
 let StatsD = require('hot-shots');
 process.env.dogstatd_host = process.env.dogstatd_host ? process.env.dogstatd_host : 'localhost';
-let dogstatsd = new StatsD({host:process.env.statsd_host});
+let dogstatsd = new StatsD({host:process.env.dogstatd_host});
 let stat = process.env.tracking_name;
 let removeShardTimeout;
 let startShardTimeout;
