@@ -130,30 +130,56 @@ class WsServer extends EventEmitter {
         switch (msg.op) {
             case OPCODE.identify: {
                 let reshard = false;
+                let resume = false;
                 clearTimeout(startShardTimeout);
-                let shardId = this.getShardId();
-                if (shardId === Object.keys(this.shards).length) {
-                    reshard = true;
-                    console.log(`RESHARDING from ${shardId} -> ${shardId + 1}`);
+                if (msg.d && msg.d.sid && msg.d.sc) {
+                    if (this.shards[msg.d.sid] && Object.keys(this.shards).length === msg.d.sc) {
+                        console.log(`Resuming Shard ${msg.d.sid}!`);
+                        resume = true;
+                    }
                 }
-                console.log(shardId);
-                this.shards[shardId] = {
-                    id: shardId,
-                    identified: true,
-                    connected: true,
-                    heartbeat: 15000,
-                    shardID: shardId,
-                    interval: null,
-                    ws: ws
-                };
-                this.emit('shard_ready', {sid: shardId});
-                startShardTimeout = setTimeout(() => {
-                    this.sendReady(reshard);
-                }, 20000);
-                // ws.send(JSON.stringify({
-                //     op: OPCODE.ready,
-                //     d: {heartbeat: 15000, sid: shardId, shards: Object.keys(this.shards).length}
-                // }));
+                if (resume) {
+                    this.shards[msg.d.sid] = {
+                        id: msg.d.sid,
+                        identified: true,
+                        connected: true,
+                        heartbeat: 15000,
+                        shardID: msg.d.sid,
+                        interval: null,
+                        ws: ws
+                    };
+                    ws.send(JSON.stringify({
+                        op: OPCODE.ready,
+                        d: {heartbeat: 15000, resume: true, sid: msg.d.sid, shards: Object.keys(this.shards).length}
+                    }));
+                    this.shards[msg.d.sid].interval = this.setupHearbeat(this.shards[msg.d.sid].heartbeat, 0);
+                    this.shards[msg.d.sid].ready = true;
+                } else {
+                    let shardId = this.getShardId();
+                    if (shardId === Object.keys(this.shards).length) {
+                        reshard = true;
+                        console.log(`RESHARDING from ${shardId} -> ${shardId + 1}`);
+                    }
+                    console.log(shardId);
+                    this.shards[shardId] = {
+                        id: shardId,
+                        identified: true,
+                        connected: true,
+                        heartbeat: 15000,
+                        shardID: shardId,
+                        interval: null,
+                        ws: ws
+                    };
+
+                    this.emit('shard_ready', {sid: shardId});
+                    startShardTimeout = setTimeout(() => {
+                        this.sendReady(reshard);
+                    }, 5000);
+                    // ws.send(JSON.stringify({
+                    //     op: OPCODE.ready,
+                    //     d: {heartbeat: 15000, sid: shardId, shards: Object.keys(this.shards).length}
+                    // }));
+                }
                 return;
             }
             case OPCODE.ready: {
@@ -193,7 +219,9 @@ class WsServer extends EventEmitter {
                                 d: {
                                     heartbeat: 15000,
                                     sid: shard.id,
-                                    shards: Object.keys(this.shards).length
+                                    shards: Object.keys(this.shards).length,
+                                    reshard: true,
+                                    resume: false
                                 }
                             }));
                         } catch (e) {

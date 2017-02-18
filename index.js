@@ -31,7 +31,7 @@ let WsHandler = require('./ws/wsHandler');
 let wsServer = new WsHandler();
 const tracker = new StatTrack(60);
 wsServer.on('shard_ready', (data) => {
-    console.log('Shard Ready!');
+    console.log(`Shard ${data.sid} Ready!`);
     shards[data.sid] = {guilds: 0, users: 0};
     // shardCount += data.sc;
 });
@@ -41,7 +41,7 @@ wsServer.on('shard_removed', (data) => {
     // shardCount += data.sc;
 });
 wsServer.on('_guild_update', (data) => {
-    if (data.sid) {
+    if (typeof (data.sid) !== 'undefined') {
         try {
             shards[data.sid].guilds = data.data;
         } catch (e) {
@@ -55,7 +55,7 @@ wsServer.on('_cache_update', (data) => {
     wsServer.broadcast('_cache_update', data)
 });
 wsServer.on('_user_update', (data) => {
-    if (data.sid) {
+    if (typeof (data.sid) !== 'undefined') {
         try {
             shards[data.sid].users = data.data;
         } catch (e) {
