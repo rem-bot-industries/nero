@@ -9,7 +9,7 @@ let OPCODE = require('../structures/constants').MESSAGE_TYPES;
 let _ = require('lodash');
 let tracking_enabled = remConfig.tracking_enabled;
 let StatsD = require('hot-shots');
-let dogstatsd = new StatsD({host:remConfig.dogstatsd_host});
+let dogstatsd = new StatsD({host: remConfig.dogstatsd_host});
 let stat = `rem_master_${remConfig.environment}`;
 let removeShardTimeout;
 let startShardTimeout;
@@ -66,6 +66,7 @@ class WsServer extends EventEmitter {
             }
         });
     }
+
     removeShard(shard) {
         let shardCount = Object.keys(this.shards).length;
         try {
@@ -74,16 +75,17 @@ class WsServer extends EventEmitter {
             console.log(`RESHARDING from ${shardCount} -> ${shardCount - 1}`);
             this.reassignShardIds();
             this.sendReady(true);
-        } catch(e) {
+        } catch (e) {
             console.error(e);
         }
     }
+
     reassignShardIds() {
         let id = 0;
         let tempShards = {};
         for (let shard in this.shards) {
             if (this.shards.hasOwnProperty(shard)) {
-                tempShards[id]=this.shards[shard];
+                tempShards[id] = this.shards[shard];
                 tempShards[id].id = id;
                 tempShards[id].shardID = id;
                 id++;
@@ -91,6 +93,7 @@ class WsServer extends EventEmitter {
         }
         this.shards = tempShards;
     }
+
     getShardId() {
         for (let shard in this.shards) {
             if (this.shards.hasOwnProperty(shard)) {
@@ -131,7 +134,7 @@ class WsServer extends EventEmitter {
                 let shardId = this.getShardId();
                 if (shardId === Object.keys(this.shards).length) {
                     reshard = true;
-                    console.log(`RESHARDING from ${shardId} -> ${shardId+1}`);
+                    console.log(`RESHARDING from ${shardId} -> ${shardId + 1}`);
                 }
                 console.log(shardId);
                 this.shards[shardId] = {

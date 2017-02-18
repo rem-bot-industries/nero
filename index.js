@@ -41,13 +41,29 @@ wsServer.on('shard_removed', (data) => {
     // shardCount += data.sc;
 });
 wsServer.on('_guild_update', (data) => {
-    shards[data.sid].guilds = data.data;
+    if (data.sid) {
+        try {
+            shards[data.sid].guilds = data.data;
+        } catch (e) {
+            console.error(e);
+            shards[data.sid] = shards[data.sid] ? shards[data.sid] : {guilds: 0, users: 0};
+            shards[data.sid].guilds = data.data;
+        }
+    }
 });
 wsServer.on('_cache_update', (data) => {
     wsServer.broadcast('_cache_update', data)
 });
 wsServer.on('_user_update', (data) => {
-    shards[data.sid].users = data.data;
+    if (data.sid) {
+        try {
+            shards[data.sid].users = data.data;
+        } catch (e) {
+            console.error(e);
+            shards[data.sid] = shards[data.sid] ? shards[data.sid] : {guilds: 0, users: 0};
+            shards[data.sid].users = data.data;
+        }
+    }
 });
 wsServer.on('request_data', (event) => {
     /**
