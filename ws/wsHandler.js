@@ -212,25 +212,23 @@ class WsServer extends EventEmitter {
         _.forEach(this.shards, (shard) => {
             if (shard.connected && shard.identified) {
                 if (reshard || !shard.ready) {
-                    setTimeout(() => {
-                        try {
-                            shard.ws.send(JSON.stringify({
-                                op: OPCODE.ready,
-                                d: {
-                                    heartbeat: 15000,
-                                    sid: shard.id,
-                                    shards: Object.keys(this.shards).length,
-                                    reshard: true,
-                                    resume: false
-                                }
-                            }));
-                        } catch (e) {
-                            console.error(e);
-                            shard.ws.close();
-                        }
-                        this.shards[shard.id].interval = this.setupHearbeat(shard.heartbeat, 0);
-                        this.shards[shard.id].ready = true;
-                    }, 6000);
+                    try {
+                        shard.ws.send(JSON.stringify({
+                            op: OPCODE.ready,
+                            d: {
+                                heartbeat: 15000,
+                                sid: shard.id,
+                                shards: Object.keys(this.shards).length,
+                                reshard: true,
+                                resume: false
+                            }
+                        }));
+                    } catch (e) {
+                        console.error(e);
+                        return this.sendReady();
+                    }
+                    this.shards[shard.id].interval = this.setupHearbeat(shard.heartbeat, 0);
+                    this.shards[shard.id].ready = true;
                 }
             }
         });
