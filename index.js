@@ -1,7 +1,7 @@
 /**
  * Created by julia on 31.01.2017.
  */
-//nya
+//nya :3
 const winston = require('winston');
 let _ = require("lodash");
 winston.remove(winston.transports.Console);
