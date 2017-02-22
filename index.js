@@ -25,7 +25,7 @@ try {
     process.exit(1);
 }
 global.remConfig = config;
-if (remConfig.tracking_enabled) {
+if (!remConfig.tracking_enabled) {
     winston.warn(`Tracking is disabled!`);
 } else {
     winston.info(`Using statsdhost: ${remConfig.dogstatsd_host}`);
