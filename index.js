@@ -25,8 +25,11 @@ try {
     process.exit(1);
 }
 global.remConfig = config;
-if (remConfig.tracking_enabled) winston.warn(`Tracking is disabled!`);
-winston.info(`Using statsdhost: ${remConfig.dogstatsd_host}`);
+if (remConfig.tracking_enabled) {
+    winston.warn(`Tracking is disabled!`);
+} else {
+    winston.info(`Using statsdhost: ${remConfig.dogstatsd_host}`);
+}
 
 let shards = {};
 let StatTrack = require('./statistics/botStatTrack');
