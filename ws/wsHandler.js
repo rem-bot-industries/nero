@@ -7,10 +7,11 @@ let ws_port = remConfig.ws_port;
 let ws_host = remConfig.ws_host;
 let OPCODE = require('../structures/constants').MESSAGE_TYPES;
 let _ = require('lodash');
-let tracking_enabled = remConfig.tracking_enabled;
-let StatsD = require('hot-shots');
+let StatsD;
 let dogstatsd;
+let tracking_enabled = remConfig.tracking_enabled;
 if (tracking_enabled) {
+    StatsD = require('hot-shots');
     dogstatsd = new StatsD({host: remConfig.dogstatsd_host});
 }
 let stat = `rem_master_${remConfig.environment}`;
