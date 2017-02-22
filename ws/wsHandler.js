@@ -28,7 +28,9 @@ class WsServer extends EventEmitter {
 
     setupListeners() {
         this.wss.on('connection', (ws) => {
-            if (tracking_enabled) dogstatsd.increment(`${stat}.websocket_connect`);
+            if (tracking_enabled) {
+                dogstatsd.increment(`${stat}.websocket_connect`);
+            }
             console.log('Connection!');
             this.onConnection(ws);
         });
@@ -52,7 +54,9 @@ class WsServer extends EventEmitter {
 
     onDisconnect(code, number, ws) {
         console.error(`Disconnect: Code: ${code} Number: ${number}`);
-        if (tracking_enabled) dogstatsd.increment(`${stat}.websocket_disconnect`);
+        if (tracking_enabled) {
+            dogstatsd.increment(`${stat}.websocket_disconnect`);
+        }
         _.forEach(this.shards, (shard) => {
             if (shard.ws === ws) {
                 clearInterval(this.shards[shard.shardID].interval);
@@ -121,7 +125,9 @@ class WsServer extends EventEmitter {
             console.error(msg);
             return console.error(e);
         }
-        if (tracking_enabled) dogstatsd.increment(`${stat}.websocket`);
+        if (tracking_enabled) {
+            dogstatsd.increment(`${stat}.websocket`);
+        }
         // console.log(`Master: ${JSON.stringify(msg)}`);
         if (msg.shardToken !== remConfig.shard_token) {
             try {
