@@ -37,12 +37,12 @@ let WsHandler = require('./ws/wsHandler');
 let wsServer = new WsHandler();
 const tracker = new StatTrack(60);
 wsServer.on('shard_ready', (data) => {
-    console.log(`Shard ${data.sid} Ready!`);
+    winston.info(`Shard ${data.sid} Ready!`);
     shards[data.sid] = {guilds: 0, users: 0};
     // shardCount += data.sc;
 });
 wsServer.on('shard_removed', (data) => {
-    console.log('Shard Removed!');
+    winston(`Shard ${data.sid} Removed!`);
     delete shards[data.sid];
     // shardCount += data.sc;
 });
@@ -117,7 +117,7 @@ tracker.on('fetch', () => {
         users += value.users;
 
     });
-    console.log(`Total Guilds: ${guilds}, Total Users: ${users}`);
+    winston.info(`Total Guilds: ${guilds}, Total Users: ${users}`);
     tracker.update(guilds, users);
 });
 winston.info('Master started! OwO');
