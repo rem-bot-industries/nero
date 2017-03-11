@@ -42,7 +42,7 @@ wsServer.on('shard_ready', (data) => {
     // shardCount += data.sc;
 });
 wsServer.on('shard_removed', (data) => {
-    winston(`Shard ${data.sid} Removed!`);
+    winston.info(`Shard ${data.sid} Removed!`);
     delete shards[data.sid];
     // shardCount += data.sc;
 });
