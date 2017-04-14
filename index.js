@@ -83,8 +83,16 @@ wsServer.on('request_data', (event) => {
      * set up a timeout
      */
     let time = setTimeout(() => {
-        returnData({err: 'Timeout!'});
-    }, 3000);
+        let badShards = {};
+        for (let shard in shards) {
+            let current = shards[shard];
+            console.log(current);
+            if (typeof shardData[shard] === 'undefined' || !shardData[shard]) {
+                badShards[shard] = current;
+            }
+        }
+        returnData({err: 'Timeout!', shardData, badShards});
+    }, 4000);
     /**
      * Called once a shard received the request and submitted data
      */
@@ -102,7 +110,7 @@ wsServer.on('request_data', (event) => {
      * Resolves the data request
      * @param data
      */
-    function returnData(data) {
+    function returnData (data) {
         wsServer.broadcast(`resolved_data_${event.id}`, data);
     }
 });

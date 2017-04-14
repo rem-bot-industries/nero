@@ -170,7 +170,7 @@ class WsServer extends EventEmitter {
                         reshard = true;
                         console.log(`RESHARDING from ${shardId} -> ${shardId + 1}`);
                     }
-                    console.log(shardId);
+                    // console.log(shardId);
                     this.shards[shardId] = {
                         id: shardId,
                         identified: true,
