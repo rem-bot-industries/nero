@@ -4,4 +4,4 @@ node_modules/
 .idea/
 .dockerignore
 docker-compose.yml
-config/
+config/main.json

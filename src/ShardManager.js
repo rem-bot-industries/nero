@@ -1,7 +1,7 @@
 /**
  * Created by Julian on 13.04.2017.
  */
-
+const winston = require('winston');
 class ShardManager {
     constructor() {
         this.shards = {};
@@ -49,7 +49,7 @@ class ShardManager {
     updateShardStats(id, stats) {
         if (typeof (this.shards[id]) !== 'undefined') {
             this.shards[id] = Object.assign(this.shards[id], stats);
-            console.log(this.shards[id]);
+            winston.info(this.shards[id]);
             return this.shards[id];
         } else {
             throw new Error(`The shard ${id} does not exist.`);
@@ -60,9 +60,9 @@ class ShardManager {
     getShardId() {
         for (let shard in this.shards) {
             if (this.shards.hasOwnProperty(shard)) {
-                console.log(this.shards[shard].wsState);
+                winston.info(this.shards[shard].wsState);
                 if (this.shards[shard].wsState === 'disconnected') {
-                    console.log(`Using not connected shard ${this.shards[shard].id}!`);
+                    winston.info(`Using not connected shard ${this.shards[shard].id}!`);
                     if (this.shards[shard].removeTimeOut) {
                         clearTimeout(this.shards[shard].removeTimeOut);
                     }
@@ -70,7 +70,7 @@ class ShardManager {
                 }
             }
         }
-        console.log(`Using new shard ${Object.keys(this.shards).length}!`);
+        winston.info(`Using new shard ${Object.keys(this.shards).length}!`);
         return Object.keys(this.shards).length;
     }
 

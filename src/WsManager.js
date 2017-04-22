@@ -3,13 +3,35 @@
  */
 const ShardManager = require('./ShardManager');
 const uuid = require('uuid/v4');
+const StatisticsManager = require('./StatisticManager');
+const StatsD = require('hot-shots');
+const WebhookManager = require('./WebhookManager');
+const winston = require('winston');
 let shardingManager = new ShardManager();
 class WsManager {
     constructor(options) {
-        this.options = options;
-        console.log(options);
+        this.options = options.manager;
+        this.webhook = options.webhook;
         this.connections = {};
         this.readyTimeout = null;
+        this.statManager = new StatisticsManager(Object.assign(options.statistics, {statsd: options.statsd}));
+        if (options.webhook.use) {
+            this.webhookManager = new WebhookManager(options.webhook);
+        }
+        if (options.statistics.track) {
+            this.statisticInterval = setInterval(() => {
+                this.trackStatistics().then(() => {
+
+                }).catch(e => {
+                    console.error(e);
+                    this.logWebhook('Posting stats failed!');
+                });
+            }, this.options.trackStatsInterval * 1000);
+        }
+        if (options.statsd.use) {
+            this.dogstatsd = new StatsD({host: options.statsd.host});
+        }
+
     }
 
     addWs(ws) {
@@ -28,7 +50,7 @@ class WsManager {
     }
 
     onMessage(msg, flags, connection) {
-        console.log(msg);
+        // winston.info(msg);
         try {
             msg = JSON.parse(msg);
         } catch (e) {
@@ -42,13 +64,17 @@ class WsManager {
                 }
                 clearTimeout(this.connections[connection.id].authTimeout);
                 let shardID;
+                let shardState = 'unknown';
+                if (msg.d.shardState) {
+                    shardState = msg.d.shardState;
+                }
                 if (!msg.d.shardID) {
                     shardID = shardingManager.getShardId();
                 }
                 this.connections[connection.id].shardID = shardID;
                 shardingManager.addShard({
                     id: shardID,
-                    shardState: 'unknown',
+                    shardState: shardState,
                     wsState: 'authenticated',
                     guilds: 0,
                     users: 0,
@@ -58,6 +84,7 @@ class WsManager {
                     host: msg.d.host,
                     pid: msg.d.pid
                 });
+                this.logWebhook(`Shard ${shardID} identified with state ${shardState}`);
                 clearTimeout(this.readyTimeout);
                 this.readyTimeout = setTimeout(() => {
                     this.sendReady();
@@ -80,6 +107,7 @@ class WsManager {
             }
             case OPCODE.STATE_UPDATE: {
                 shardingManager.updateShardState(connection.shardID, msg.d.state);
+                this.logWebhook(`Shard ${connection.shardID} updated state to ${msg.d.state}`);
                 return;
             }
             default:
@@ -104,7 +132,7 @@ class WsManager {
                     console.error(e);
                     return this.sendReady();
                 }
-                // console.log(connection.heartbeat);
+                // winston.info(connection.heartbeat);
                 this.connections[connection.id].heartbeatTimeout = this.setupTimeout(this.connections[connection.id])
             }
         }
@@ -120,6 +148,7 @@ class WsManager {
 
     onDisconnect(code, number, connection) {
         console.error(code, number);
+        this.logWebhook(`Shard ${connection.shardID} disconnected with code ${code}!`, 'error');
         try {
             shardingManager.updateWsState(connection.shardID, 'disconnected');
         } catch (e) {
@@ -146,7 +175,7 @@ class WsManager {
     }
 
     runAction(msg, connection) {
-        console.log(msg);
+        // winston.info(msg);
         switch (msg.d.action) {
             case 'bot_info': {
                 let shards = shardingManager.getAllShards(connection.shardID);
@@ -175,6 +204,35 @@ class WsManager {
                     console.error(e);
                 }
             }
+        }
+    }
+
+    async trackStatistics() {
+        let shards = shardingManager.getAllShards();
+        let stats = {guilds: 0, users: 0, channels: 0, voiceConnections: 0, activeVoiceConnections: 0};
+        for (let key in shards) {
+            if (shards.hasOwnProperty(key)) {
+                let shard = shards[key];
+                if (shard.shardState === 'bot_ready') {
+                    stats.guilds += shard.guilds;
+                    stats.users += shard.users;
+                    stats.channels += shard.channels;
+                    stats.voiceConnections += shard.voice;
+                    stats.activeVoiceConnections += shard.voice_active;
+                }
+            }
+        }
+        this.statManager.postStatsDataDog(stats);
+        await this.statManager.postStats(stats.guilds);
+    }
+
+    logWebhook(message, level) {
+        if (this.webhook.use) {
+            this.webhookManager.log(message, level).then(() => {
+
+            }).catch(e => {
+                console.error(e)
+            });
         }
     }
 }
