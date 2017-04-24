@@ -31,7 +31,7 @@ class WsManager {
         if (options.statsd.use) {
             this.dogstatsd = new StatsD({host: options.statsd.host});
         }
-
+        this.waitingResponses = {};
     }
 
     addWs(ws) {
@@ -50,7 +50,6 @@ class WsManager {
     }
 
     onMessage(msg, flags, connection) {
-        // winston.info(msg);
         try {
             msg = JSON.parse(msg);
         } catch (e) {
@@ -140,7 +139,11 @@ class WsManager {
 
     onHeartbeat(msg, connection) {
         if (typeof (this.connections[connection.id]) !== 'undefined') {
-            connection.ws.send(JSON.stringify({op: OPCODE.HEARTBEAT}));
+            try {
+                connection.ws.send(JSON.stringify({op: OPCODE.HEARTBEAT}));
+            } catch (e) {
+
+            }
             clearTimeout(this.connections[connection.id].heartbeatTimeout);
             this.connections[connection.id].heartbeatTimeout = this.setupTimeout(this.connections[connection.id])
         }
@@ -174,7 +177,7 @@ class WsManager {
         }, connection.heartbeat);
     }
 
-    runAction(msg, connection) {
+    async runAction(msg, connection) {
         // winston.info(msg);
         switch (msg.d.action) {
             case 'bot_info': {
@@ -185,10 +188,56 @@ class WsManager {
                 }));
                 return;
             }
+            case 'shard_info': {
+                if (msg.d.actionId) {
+                    if (typeof (this.waitingResponses[msg.d.actionId]) !== 'undefined') {
+                        return this.waitingResponses[msg.d.actionId].onMessage(msg);
+                    }
+                    this.broadcast({action: 'shard_info', actionId: msg.d.actionId, request: true});
+                    try {
+                        let res = await this.awaitReponseAll(msg.d.actionId);
+                        connection.ws.send(JSON.stringify({
+                            op: OPCODE.MESSAGE,
+                            d: {shards: res.shards, action: 'shard_info', actionId: msg.d.actionId}
+                        }));
+                        delete this.waitingResponses[msg.d.actionId];
+                    } catch (e) {
+                        console.error(e);
+                    }
+                }
+                return;
+            }
             default: {
                 return;
             }
         }
+    }
+
+    awaitResponseSingle() {
+
+    }
+
+    awaitReponseAll(id) {
+        return new Promise((res, rej) => {
+            this.waitingResponses[id] = {
+                onMessage: (msg) => {
+                    console.log('ON MESSAGE');
+                    this.waitingResponses[id].shards[msg.d.shardID] = msg.d;
+                    if (Object.keys(this.waitingResponses[id].shards).length === Object.keys(this.connections).length) {
+                        clearTimeout(this.waitingResponses[id].responseTimeout);
+                        res(this.waitingResponses[id]);
+                    }
+                },
+                shards: {},
+                responseTimeout: setTimeout(() => {
+                    try {
+                        rej(this.waitingResponses[id]);
+                    } catch (e) {
+
+                    }
+                }, 5000)
+            }
+        });
     }
 
     broadcast(msg) {
