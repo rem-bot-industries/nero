@@ -12,6 +12,8 @@ class WsManager {
     constructor(options) {
         this.options = options.manager;
         this.webhook = options.webhook;
+        this.statsd = options.statsd;
+        this.stat = options.statistics.statName;
         this.connections = {};
         this.readyTimeout = null;
         this.statManager = new StatisticsManager(Object.assign(options.statistics, {statsd: options.statsd}));
@@ -35,6 +37,9 @@ class WsManager {
     }
 
     addWs(ws) {
+        if (this.statsd.use) {
+            this.dogstatsd.increment(`${this.stat}.websocket_connect`);
+        }
         let id = uuid();
         this.connections[id] = {ws, authenticated: false, heartbeat: 20000, heartbeatTimeout: null, id};
         this.connections[id].ws.send(JSON.stringify({op: OPCODE.IDENTIFY}));
@@ -42,6 +47,9 @@ class WsManager {
             this.onMessage(msg, flags, this.connections[id])
         });
         this.connections[id].ws.on('close', (code, number) => {
+            if (this.statsd.use) {
+                this.dogstatsd.increment(`${this.stat}.websocket_disconnect`);
+            }
             this.onDisconnect(code, number, this.connections[id])
         });
         this.connections[id].authTimeout = setTimeout(() => {
@@ -55,6 +63,9 @@ class WsManager {
         } catch (e) {
             console.error(msg);
             return console.error(e);
+        }
+        if (this.statsd.use) {
+            this.dogstatsd.increment(`${this.stat}.websocket_message`);
         }
         switch (msg.op) {
             case OPCODE.IDENTIFY: {
@@ -142,7 +153,7 @@ class WsManager {
             try {
                 connection.ws.send(JSON.stringify({op: OPCODE.HEARTBEAT}));
             } catch (e) {
-
+                console.error(e);
             }
             clearTimeout(this.connections[connection.id].heartbeatTimeout);
             this.connections[connection.id].heartbeatTimeout = this.setupTimeout(this.connections[connection.id])
@@ -151,7 +162,8 @@ class WsManager {
 
     onDisconnect(code, number, connection) {
         console.error(code, number);
-        this.logWebhook(`Shard ${connection.shardID} disconnected with code ${code}!`, 'error');
+        console.error(`Shard ${connection.shardID} disconnected with code ${code}! HOST:${shardingManager.getShard(connection.shardID).host}`);
+        this.logWebhook(`Shard ${connection.shardID} disconnected with code ${code}! HOST:${shardingManager.getShard(connection.shardID).host}`, 'error');
         try {
             shardingManager.updateWsState(connection.shardID, 'disconnected');
         } catch (e) {
@@ -166,6 +178,9 @@ class WsManager {
 
     heartbeatTimeout(id) {
         if (typeof (this.connections[id]) !== 'undefined') {
+            if (this.statsd.use) {
+                this.dogstatsd.increment(`${this.stat}.websocket_timeout`);
+            }
             this.connections[id].shardState = 'unknown';
             this.connections[id].ws.close(4000, 'Heartbeat timeout');
         }
@@ -174,7 +189,7 @@ class WsManager {
     setupTimeout(connection) {
         return setTimeout(() => {
             this.heartbeatTimeout(connection.id);
-        }, connection.heartbeat);
+        }, connection.heartbeat + 1000);
     }
 
     async runAction(msg, connection) {
