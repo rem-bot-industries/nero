@@ -98,7 +98,7 @@ class WsManager {
                 clearTimeout(this.readyTimeout);
                 this.readyTimeout = setTimeout(() => {
                     this.sendReady();
-                }, 10 * 1000);
+                }, 25 * 1000);
                 return;
             }
             case OPCODE.HEARTBEAT: {
@@ -161,6 +161,7 @@ class WsManager {
     }
 
     onDisconnect(code, number, connection) {
+        clearTimeout(this.connections[connection.id].heartbeatTimeout);
         console.error(code, number);
         console.error(`Shard ${connection.shardID} disconnected with code ${code}! HOST:${shardingManager.getShard(connection.shardID).host}`);
         this.logWebhook(`Shard ${connection.shardID} disconnected with code ${code}! HOST:${shardingManager.getShard(connection.shardID).host}`, 'error');
