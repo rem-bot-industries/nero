@@ -41,16 +41,16 @@ class WsManager {
             this.dogstatsd.increment(`${this.stat}.websocket_connect`);
         }
         let id = uuid();
-        this.connections[id] = {ws, authenticated: false, heartbeat: 20000, heartbeatTimeout: null, id};
+        this.connections[id] = {ws, authenticated: false, heartbeat: 5000, heartbeatTimeout: null, id};
         this.connections[id].ws.send(JSON.stringify({op: OPCODE.IDENTIFY}));
         this.connections[id].ws.on('message', (msg, flags) => {
             this.onMessage(msg, flags, this.connections[id])
         });
-        this.connections[id].ws.on('close', (code, number) => {
+        this.connections[id].ws.on('close', (code, reason) => {
             if (this.statsd.use) {
                 this.dogstatsd.increment(`${this.stat}.websocket_disconnect`);
             }
-            this.onDisconnect(code, number, this.connections[id])
+            this.onDisconnect(code, reason, this.connections[id])
         });
         this.connections[id].authTimeout = setTimeout(() => {
             this.onAuthTimeout(this.connections[id]);
@@ -64,6 +64,7 @@ class WsManager {
             console.error(msg);
             return console.error(e);
         }
+        // console.log(JSON.stringify(msg));
         if (this.statsd.use) {
             this.dogstatsd.increment(`${this.stat}.websocket_message`);
         }
@@ -133,7 +134,7 @@ class WsManager {
                     connection.ws.send(JSON.stringify({
                         op: OPCODE.READY,
                         d: {
-                            heartbeat: 20000,
+                            heartbeat: 5000,
                             sid: connection.shardID,
                             sc: shardingManager.getShardCount()
                         }
@@ -143,11 +144,17 @@ class WsManager {
                     return this.sendReady();
                 }
                 // winston.info(connection.heartbeat);
+
                 this.connections[connection.id].heartbeatTimeout = this.setupTimeout(this.connections[connection.id])
             }
         }
     }
 
+    /**
+     * Reset the heartbeat timeout, send a heartbeat ack and restart the timeout
+     * @param {Object} msg data
+     * @param {Object} connection The connection object
+     */
     onHeartbeat(msg, connection) {
         if (typeof (this.connections[connection.id]) !== 'undefined') {
             try {
@@ -160,9 +167,17 @@ class WsManager {
         }
     }
 
-    onDisconnect(code, number, connection) {
+    /**
+     * Log the disconnect to the webhook and the console and update the
+     * internal state then delete the client from the connections
+     * @param {Number} code Errorcode (1006 -> regular disconnect,
+     * 4000 -> client)
+     * @param {String} reason Reason for the disconnect
+     * @param {Object} connection The connection object
+     */
+    onDisconnect(code, reason, connection) {
         clearTimeout(this.connections[connection.id].heartbeatTimeout);
-        console.error(code, number);
+        console.error(code, reason);
         console.error(`Shard ${connection.shardID} disconnected with code ${code}! HOST:${shardingManager.getShard(connection.shardID).host}`);
         this.logWebhook(`Shard ${connection.shardID} disconnected with code ${code}! HOST:${shardingManager.getShard(connection.shardID).host}`, 'error');
         try {
@@ -173,10 +188,18 @@ class WsManager {
         delete this.connections[connection.id];
     }
 
+    /**
+     * Close the connection because the client did not authenticate in time
+     * @param {Object} connection The connection object
+     */
     onAuthTimeout(connection) {
         return connection.ws.close(4000, 'Auth Timeout!');
     }
 
+    /**
+     * Close the connection and increment the websocket timeout tracker on datadog
+     * @param {String} id Id of the connection
+     */
     heartbeatTimeout(id) {
         if (typeof (this.connections[id]) !== 'undefined') {
             if (this.statsd.use) {
@@ -187,12 +210,25 @@ class WsManager {
         }
     }
 
+    /**
+     * Create a timeout and disconnect the client if it isn't cleared within
+     * heartbeat+4 seconds
+     * @param {Object} connection The connection object
+     * @return {Object}
+     */
     setupTimeout(connection) {
+        clearTimeout(this.connections[connection.id].heartbeatTimeout);
         return setTimeout(() => {
             this.heartbeatTimeout(connection.id);
         }, connection.heartbeat + 4000);
     }
 
+    /**
+     * Executes a action based on the message
+     * @param {Object} msg Message from the websocket
+     * @param {Object} connection The connection object
+     * @return {Promise.<*>}
+     */
     async runAction(msg, connection) {
         // winston.info(msg);
         switch (msg.d.action) {
@@ -233,11 +269,16 @@ class WsManager {
 
     }
 
+    /**
+     * Awaits a response from all shards
+     * @param id Event id to await
+     * @return {Promise}
+     */
     awaitReponseAll(id) {
         return new Promise((res, rej) => {
             this.waitingResponses[id] = {
                 onMessage: (msg) => {
-                    console.log('ON MESSAGE');
+                    // console.log('ON MESSAGE');
                     this.waitingResponses[id].shards[msg.d.shardID] = msg.d;
                     if (Object.keys(this.waitingResponses[id].shards).length === Object.keys(this.connections).length) {
                         clearTimeout(this.waitingResponses[id].responseTimeout);
@@ -256,6 +297,10 @@ class WsManager {
         });
     }
 
+    /**
+     * Sends a broadcast message to all connected and authenticated shards
+     * @param {Object} msg data to send
+     */
     broadcast(msg) {
         for (let key in this.connections) {
             if (this.connections.hasOwnProperty(key)) {
@@ -272,6 +317,10 @@ class WsManager {
         }
     }
 
+    /**
+     * Posts the stats to Datadog and various bot sites
+     * @return {Promise.<void>}
+     */
     async trackStatistics() {
         let shards = shardingManager.getAllShards();
         let stats = {guilds: 0, users: 0, channels: 0, voiceConnections: 0, activeVoiceConnections: 0};
@@ -291,6 +340,11 @@ class WsManager {
         await this.statManager.postStats(stats.guilds);
     }
 
+    /**
+     * Logs a message to the webhook set in the config
+     * @param {String} message
+     * @param {String} level
+     */
     logWebhook(message, level) {
         if (this.webhook.use) {
             this.webhookManager.log(message, level).then(() => {

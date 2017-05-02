@@ -3,12 +3,21 @@
  */
 const EventEmitter = require('events').EventEmitter;
 const wss = require('ws').Server;
+
+/**
+ * WebsocketServer for clients to connect to
+ * @extends EventEmitter
+ */
 class WebsocketServer extends EventEmitter {
     constructor(options) {
         super();
         this.options = options;
     }
 
+    /**
+     * Creates a new Websocket server for clients to connect to
+     * Options are passed directly to the wss
+     */
     start() {
         this.ws = new wss(this.options);
         this.ws.on('connection', (ws) => {
@@ -35,7 +44,9 @@ class WebsocketServer extends EventEmitter {
     // onError(err, ws) {
     //     this.emit('WS_ERROR', {err, ws});
     // }
-
+    /**
+     * Stops the server
+     */
     stop() {
         if (this.ws) {
             this.ws.close();
