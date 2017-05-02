@@ -190,7 +190,7 @@ class WsManager {
     setupTimeout(connection) {
         return setTimeout(() => {
             this.heartbeatTimeout(connection.id);
-        }, connection.heartbeat + 1000);
+        }, connection.heartbeat + 4000);
     }
 
     async runAction(msg, connection) {
