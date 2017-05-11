@@ -1,0 +1,55 @@
+{
+  "server": {
+    "host": "ip of the server",
+    "port": 8080,
+    //port
+    "noServer": true
+    //ws option to not use a http server
+  },
+  "manager": {
+    "token": "",
+    //shared secret which shard and master use to identify themselves
+    "trackStatsInterval": 15
+    //time in seconds to send stats
+  },
+  "statistics": {
+    "track": false,
+    //if statistics should be tracked in general
+    "abalBots": {
+      "track": false,
+      //track bots.discord.pw
+      "token": ""
+      //token for bots.discord.pw
+    },
+    "carbon": {
+      "track": false,
+      //track carbonitex.net
+      "token": ""
+      //token for carbonitex.net
+    },
+    "dbotsOrg": {
+      "track": false,
+      //track discordbots.org
+      "token": ""
+      //token for discordbots.org
+    },
+    "bot_id": "",
+    //id of the bot
+    "statName": ""
+    //name of the stats in datadog
+  },
+  "webhook": {
+    "use": false,
+    //use the webhook?
+    "url": "",
+    //full url of the webhook
+    "useEmbed": false
+    //use embeds for the logs
+  },
+  "statsd": {
+    "use": false,
+    //use the statsd
+    "host": ""
+    //statsd host adress
+  }
+}
