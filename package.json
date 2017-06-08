@@ -9,9 +9,9 @@
   "author": "Wolke <wolke@ram.moe>",
   "license": "MIT",
   "dependencies": {
-    "axios": "^0.16.1",
+    "axios": "^0.16.2",
     "eventemitter3": "^2.0.2",
-    "hot-shots": "^4.3.1",
+    "hot-shots": "^4.5.0",
     "uuid": "^3.0.1",
     "winston": "^2.3.1",
     "ws": "^2.3.1"
