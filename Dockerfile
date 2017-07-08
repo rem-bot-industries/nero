@@ -1,4 +1,4 @@
-FROM node:8.0.0-alpine
+FROM node:7.10.0-alpine
 LABEL maintainer Wolke "wolke@ram.moe"
 WORKDIR /usr/src
 RUN mkdir nero
