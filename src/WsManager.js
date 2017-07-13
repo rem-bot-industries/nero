@@ -70,6 +70,9 @@ class WsManager {
         }
         switch (msg.op) {
             case OPCODE.IDENTIFY: {
+                if (!msg.d) {
+                    return console.error(msg);
+                }
                 if (msg.d.token !== this.options.token) {
                     return connection.ws.close(4000, 'Bad Token!');
                 }
